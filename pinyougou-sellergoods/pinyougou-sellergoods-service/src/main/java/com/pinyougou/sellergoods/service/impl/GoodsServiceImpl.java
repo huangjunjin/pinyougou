@@ -83,22 +83,7 @@ public class GoodsServiceImpl extends BaseServiceImpl<TbGoods> implements GoodsS
 
     @Override
     public Goods findGoodsById(Long id) {
-        Goods goods = new Goods();
-        //查询商品SPU
-        TbGoods tbGoods = goodsMapper.selectByPrimaryKey(id);
-        goods.setGoods(tbGoods);
-
-        //查询商品描述
-        TbGoodsDesc goodsDesc = goodsDescMapper.selectByPrimaryKey(id);
-        goods.setGoodsDesc(goodsDesc);
-
-        //查询商品SKU列表
-        Example example = new Example(TbItem.class);
-        example.createCriteria().andEqualTo("goodsId",id);
-        List<TbItem> itemList = itemMapper.selectByExample(example);
-        goods.setItemList(itemList);
-
-        return goods;
+        return findGoodsByIdAndStatus(id,null);
     }
 
     @Override
@@ -176,6 +161,33 @@ public class GoodsServiceImpl extends BaseServiceImpl<TbGoods> implements GoodsS
         example.createCriteria().andEqualTo("status",status).andIn("goodsId",Arrays.asList(ids));
 
         return itemMapper.selectByExample(example);
+    }
+
+    @Override
+    public Goods findGoodsByIdAndStatus(Long goodsId, String itemStatus) {
+        Goods goods = new Goods();
+        //查询商品SPU
+        TbGoods tbGoods = goodsMapper.selectByPrimaryKey(goodsId);
+        goods.setGoods(tbGoods);
+
+        //查询商品描述
+        TbGoodsDesc goodsDesc = goodsDescMapper.selectByPrimaryKey(goodsId);
+        goods.setGoodsDesc(goodsDesc);
+
+        //查询商品SKU列表
+        Example example = new Example(TbItem.class);
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("goodsId",goodsId);
+        if (!StringUtils.isEmpty(itemStatus)){
+            criteria.andEqualTo("status",itemStatus);
+        }
+        //按照是否默认值降序排序，默认值为1，否则为0
+        example.orderBy("isDefault").desc();
+
+        List<TbItem> itemList = itemMapper.selectByExample(example);
+        goods.setItemList(itemList);
+
+        return goods;
     }
 
     private void saveItemList(Goods goods) {
